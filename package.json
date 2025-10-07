@@ -23,7 +23,7 @@
     "firebase:deploy:functions": "firebase deploy --only functions",
     "firebase:deploy:hosting": "npm run build:web && firebase deploy --only hosting",
     "firebase:deploy:rules": "firebase deploy --only firestore:rules,storage:rules",
-    "build:web": "vite build",
+    "build:web": "vite build && node scripts/postbuild.js",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css}\""
   },
@@ -85,10 +85,13 @@
     ],
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.social-networking"
+      "category": "public.app-category.social-networking",
+      "identity": "Your Company Name (XXXXXXXXXX)"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "signingHashAlgorithms": ["sha256"],
+      "certificateSubjectName": "Your Company Name"
     }
   }
 }
