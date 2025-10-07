@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-discord-dark-1 text-discord-gray-1 font-sans antialiased;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-discord-dark-2;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-discord-dark-4 rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-discord-gray-4;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-discord-blurple hover:bg-discord-blurple/90 text-white font-medium px-4 py-2 rounded transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-discord-dark-4 hover:bg-discord-gray-4 text-white font-medium px-4 py-2 rounded transition-colors;
+  }
+
+  .input-field {
+    @apply bg-discord-dark-3 border border-discord-dark-4 text-discord-gray-1 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-discord-blurple;
+  }
+
+  .sidebar {
+    @apply bg-discord-dark-2 h-full flex flex-col;
+  }
+
+  .channel-list {
+    @apply bg-discord-dark-2 flex-1 overflow-y-auto;
+  }
+
+  .chat-window {
+    @apply bg-discord-dark-1 flex-1 flex flex-col;
+  }
+
+  .message-item {
+    @apply px-4 py-2 hover:bg-discord-dark-2/50 transition-colors;
+  }
+}
