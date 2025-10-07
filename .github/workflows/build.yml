@@ -6,17 +6,21 @@ on:
       - main # main 브랜치에 푸시될 때마다 실행
 
 jobs:
-  build-windows:
-    runs-on: windows-latest # Windows 환경에서 실행
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+        node-version: [20]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
+    - name: Setup Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
-        node-version: '20' # 프로젝트에 맞는 Node.js 버전 지정
+        node-version: ${{ matrix.node-version }}
 
     - name: Install dependencies
       run: npm install
@@ -24,32 +28,24 @@ jobs:
     - name: Build React App (Vite)
       run: npm run build:web
 
-    - name: Build Electron App for Windows (x64)
-      run: npm run build:win # package.json의 build:win 스크립트 실행
+    - name: Build Electron App
+      if: runner.os == 'Windows'
+      run: npm run build:win
+
+    - name: Build Electron App
+      if: runner.os == 'macOS'
+      run: npm run build:mac
 
     - name: Upload Windows Artifacts
+      if: runner.os == 'Windows'
       uses: actions/upload-artifact@v4
       with:
         name: NiceTop-Windows-x64
-        path: dist/NiceTop Setup 1.0.0.exe # 빌드된 Windows 설치 파일 경로
+        path: dist/NiceTop Setup 1.0.0.exe
 
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install dependencies
-        run: npm install
-      - name: Build React App (Vite)
-        run: npm run build:web
-      - name: Build Electron App for macOS
-        run: npm run build:mac
-      - name: Upload macOS Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: NiceTop-macOS-arm64
-          path: dist/NiceTop-1.0.0-arm64.dmg
+    - name: Upload macOS Artifacts
+      if: runner.os == 'macOS'
+      uses: actions/upload-artifact@v4
+      with:
+        name: NiceTop-macOS-arm64
+        path: dist/NiceTop-1.0.0-arm64.dmg
