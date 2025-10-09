@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../utils/firebase';
+import Modal from '../common/Modal'; // Import Modal component
 
 export default function JoinServerModal({ onClose, onServerJoined }) {
   const [inviteCode, setInviteCode] = useState('');
@@ -108,60 +109,54 @@ export default function JoinServerModal({ onClose, onServerJoined }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div
-        className="bg-discord-dark-2 rounded-lg p-6 w-full max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-2xl font-bold text-white mb-2">서버 참가하기</h2>
-        <p className="text-discord-gray-3 text-sm mb-4">
-          초대 링크나 초대 코드를 입력하세요
-        </p>
+    <Modal isOpen={true} onClose={onClose} title="서버 참가하기">
+      <p className="text-discord-gray-3 text-sm mb-4">
+        초대 링크나 초대 코드를 입력하세요
+      </p>
 
-        {error && (
-          <div className="mb-4 p-3 bg-discord-red/20 border border-discord-red rounded text-discord-red text-sm">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="mb-4 p-3 bg-discord-red/20 border border-discord-red rounded text-discord-red text-sm">
+          {error}
+        </div>
+      )}
 
-        <form onSubmit={handleJoinServer}>
-          <div className="mb-4">
-            <label className="block text-discord-gray-2 text-xs font-bold mb-2">
-              초대 링크 또는 코드
-            </label>
-            <input
-              type="text"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
-              className="input-field w-full"
-              placeholder="https://... 또는 8자리 코드"
-              required
-              autoFocus
-            />
-            <p className="text-xs text-discord-gray-4 mt-1">
-              예: https://example.com/invite/ABC12345 또는 ABC12345
-            </p>
-          </div>
+      <form onSubmit={handleJoinServer}>
+        <div className="mb-4">
+          <label className="block text-discord-gray-2 text-xs font-bold mb-2">
+            초대 링크 또는 코드
+          </label>
+          <input
+            type="text"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+            className="input-field w-full"
+            placeholder="https://... 또는 8자리 코드"
+            required
+            autoFocus
+          />
+          <p className="text-xs text-discord-gray-4 mt-1">
+            예: https://example.com/invite/ABC12345 또는 ABC12345
+          </p>
+        </div>
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1"
-              disabled={loading}
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              className="btn-primary flex-1"
-              disabled={loading}
-            >
-              {loading ? '참가 중...' : '서버 참가'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-secondary flex-1"
+            disabled={loading}
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            className="btn-primary flex-1"
+            disabled={loading}
+          >
+            {loading ? '참가 중...' : '서버 참가'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

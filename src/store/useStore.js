@@ -198,7 +198,7 @@ const useStore = create((set, get) => ({
 
       const serversQuery = query(collection(db, 'servers'), where('__name__', 'in', userServers));
       const unsubscribeServers = onSnapshot(serversQuery, (snapshot) => {
-        const serverList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const serverList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), hasUnread: false })); // Placeholder for unread status
         set({ servers: serverList });
 
         if (serverList.length > 0 && !get().selectedServer) {
@@ -237,7 +237,7 @@ const useStore = create((set, get) => ({
         }
 
         const profiles = await Promise.all(
-          updatedServer.members.map(async (member) => {
+          Object.values(updatedServer.members || {}).map(async (member) => {
             const userDocRef = doc(db, 'users', member.uid);
             const userDoc = await getDoc(userDocRef); // Still need to get user details
             return userDoc.exists() ? { ...userDoc.data(), ...member } : null;

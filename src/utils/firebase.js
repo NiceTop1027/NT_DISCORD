@@ -3,16 +3,18 @@ import { getAuth, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { getDatabase } from 'firebase/database';
+import { getAnalytics } from "firebase/analytics";
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyCvwNSIATmdAF9_AYtVCWm87mWsbVpLHs4",
+  authDomain: "discord-nt.firebaseapp.com",
+  databaseURL: "https://discord-nt-default-rtdb.firebaseio.com",
+  projectId: "discord-nt",
+  storageBucket: "discord-nt.firebasestorage.app",
+  messagingSenderId: "785875392491",
+  appId: "1:785875392491:web:756526d831ad374eae6bae",
+  measurementId: "G-65XRSP4WFL"
 };
 
 console.log('Firebase Config:', firebaseConfig);
@@ -24,6 +26,7 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const rtdb = getDatabase(app);
+export const analytics = getAnalytics(app);
 
 /**
  * Uploads a file to Firebase Storage.

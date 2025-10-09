@@ -40,6 +40,7 @@
     "react-markdown": "^9.0.1",
     "react-router-dom": "^6.20.0",
     "react-syntax-highlighter": "^15.5.0",
+    "react-transition-group": "^4.4.5",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.0",
     "zustand": "^4.4.7"
@@ -90,7 +91,9 @@
     },
     "win": {
       "target": "nsis",
-      "signingHashAlgorithms": ["sha256"],
+      "signingHashAlgorithms": [
+        "sha256"
+      ],
       "certificateSubjectName": "Your Company Name"
     }
   }

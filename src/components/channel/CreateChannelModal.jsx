@@ -1,17 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createChannel } from '../../utils/cloudFunctions';
-import useStore from '../../store/useStore'; // Import useStore to get channels for categories
+import useStore from '../../store/useStore';
 
-export default function CreateChannelModal({ server, onClose, initialType = 'text' }) {
-  const { channels } = useStore(); // Get channels to suggest categories
+export default function CreateChannelModal({ server, onClose, initialType = 'text', categoryId = null }) {
+  const { categories, fetchChannelsAndCategories } = useStore();
   const [channelName, setChannelName] = useState('');
   const [channelType, setChannelType] = useState(initialType);
-  const [categoryName, setCategoryName] = useState(''); // New state for category name
+  const [categoryName, setCategoryName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Extract unique category names from existing channels
-  const existingCategories = [...new Set(channels.map(ch => ch.categoryName).filter(Boolean))];
+  useEffect(() => {
+    if (categoryId && categoryId !== 'no-category') {
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        setCategoryName(category.name);
+      }
+    }
+  }, [categoryId, categories]);
+
+  const existingCategoryNames = categories.map(cat => cat.name);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -23,8 +31,8 @@ export default function CreateChannelModal({ server, onClose, initialType = 'tex
     setLoading(true);
 
     try {
-      // Pass categoryName to the cloud function
-      await createChannel(server.id, channelName, channelType, categoryName.trim() || null);
+      await createChannel(server.id, channelName, channelType, categoryName.trim());
+      fetchChannelsAndCategories(server.id);
       onClose();
     } catch (err) {
       console.error('Channel creation error:', err);
@@ -108,7 +116,6 @@ export default function CreateChannelModal({ server, onClose, initialType = 'tex
             />
           </div>
 
-          {/* New Category Input */}
           <div className="mb-4">
             <label className="block text-discord-gray-2 text-xs font-bold mb-2">
               카테고리 (선택 사항)
@@ -119,11 +126,11 @@ export default function CreateChannelModal({ server, onClose, initialType = 'tex
               onChange={(e) => setCategoryName(e.target.value)}
               className="input-field w-full"
               placeholder="카테고리 이름"
-              list="existing-categories" // Link to datalist
+              list="existing-categories"
             />
-            {existingCategories.length > 0 && (
+            {existingCategoryNames.length > 0 && (
               <datalist id="existing-categories">
-                {existingCategories.map((cat) => (
+                {existingCategoryNames.map((cat) => (
                   <option key={cat} value={cat} />
                 ))}
               </datalist>

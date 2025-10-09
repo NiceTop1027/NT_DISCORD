@@ -8,13 +8,15 @@ import useStore from '../../store/useStore';
 import ImageCropperModal from '../common/ImageCropperModal';
 
 export default function DiscordSettings({ isOpen, onClose }) {
-  const { currentUser, currentUserProfile } = useStore();
+  const { currentUser, currentUserProfile, refetchMemberProfiles } = useStore();
   const [activeTab, setActiveTab] = useState('my-account');
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [error, setError] = useState('');
 
   const [imageToCrop, setImageToCrop] = useState(null);
+  const [imageToCropFor, setImageToCropFor] = useState(null); // 'avatar' or 'banner'
   const [showCropperModal, setShowCropperModal] = useState(false);
 
   // Form states
@@ -23,6 +25,7 @@ export default function DiscordSettings({ isOpen, onClose }) {
   const [status, setStatus] = useState('online');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [bannerUrl, setBannerUrl] = useState('');
 
   useEffect(() => {
     if (currentUserProfile) {
@@ -31,6 +34,7 @@ export default function DiscordSettings({ isOpen, onClose }) {
       setStatus(currentUserProfile.status || 'online');
       setBio(currentUserProfile.profile?.bio || '');
       setAvatarUrl(currentUserProfile.profile?.avatarUrl || currentUserProfile.avatarUrl || currentUser?.photoURL || '');
+      setBannerUrl(currentUserProfile.profile?.bannerUrl || '');
     }
   }, [currentUserProfile, currentUser]);
 
@@ -46,6 +50,28 @@ export default function DiscordSettings({ isOpen, onClose }) {
     const reader = new FileReader();
     reader.onload = () => {
       setImageToCrop(reader.result);
+      setImageToCropFor('avatar');
+      setShowCropperModal(true);
+    };
+    reader.readAsDataURL(file);
+
+    // Clear the file input to allow re-uploading the same file
+    e.target.value = '';
+  };
+
+  const handleBannerUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('이미지 파일만 업로드할 수 있습니다.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageToCrop(reader.result);
+      setImageToCropFor('banner');
       setShowCropperModal(true);
     };
     reader.readAsDataURL(file);
@@ -61,32 +87,48 @@ export default function DiscordSettings({ isOpen, onClose }) {
     }
 
     setError('');
-    setUploadingAvatar(true);
+    
+    if (imageToCropFor === 'avatar') {
+      setUploadingAvatar(true);
+    } else {
+      setUploadingBanner(true);
+    }
 
     try {
-      // Delete old avatar if exists
-      if (avatarUrl && avatarUrl.includes('firebasestorage.googleapis.com')) {
+      const isAvatar = imageToCropFor === 'avatar';
+      const oldUrl = isAvatar ? avatarUrl : bannerUrl;
+
+      // Delete old image if exists
+      if (oldUrl && oldUrl.includes('firebasestorage.googleapis.com')) {
         try {
-          const oldAvatarRef = ref(storage, avatarUrl);
-          await deleteObject(oldAvatarRef);
+          const oldImageRef = ref(storage, oldUrl);
+          await deleteObject(oldImageRef);
         } catch (err) {
-          console.log('Old avatar delete failed:', err);
+          console.log(`이전 ${imageToCropFor} 삭제 실패:`, err);
         }
       }
 
-      // Upload new avatar
-      const avatarPath = `avatars/${currentUser.uid}/avatar_${Date.now()}.jpeg`; // Force JPEG for cropped image
-      const avatarRef = ref(storage, avatarPath);
-      await uploadBytes(avatarRef, croppedImageBlob);
-      const newAvatarUrl = await getDownloadURL(avatarRef);
+      // Upload new image
+      const imagePath = isAvatar 
+        ? `avatars/${currentUser.uid}/avatar_${Date.now()}.jpeg`
+        : `banners/${currentUser.uid}/banner_${Date.now()}.jpeg`;
+      const imageRef = ref(storage, imagePath);
+      await uploadBytes(imageRef, croppedImageBlob);
+      const newImageUrl = await getDownloadURL(imageRef);
       
-      setAvatarUrl(newAvatarUrl);
+      if (isAvatar) {
+        setAvatarUrl(newImageUrl);
+      } else {
+        setBannerUrl(newImageUrl);
+      }
     } catch (err) {
-      console.error('Avatar upload error:', err);
-      setError('프로필 사진 업로드 실패: ' + err.message);
+      console.error(`${imageToCropFor} 업로드 오류:`, err);
+      setError(`프로필 ${isAvatar ? '사진' : '배너'} 업로드 실패: ` + err.message);
     } finally {
       setUploadingAvatar(false);
+      setUploadingBanner(false);
       setImageToCrop(null);
+      setImageToCropFor(null);
       setShowCropperModal(false);
     }
   };
@@ -108,6 +150,7 @@ export default function DiscordSettings({ isOpen, onClose }) {
       await updateDoc(doc(db, 'users', currentUser.uid), {
         'profile.displayName': username,
         'profile.avatarUrl': avatarUrl,
+        'profile.bannerUrl': bannerUrl,
         'profile.bio': bio,
         status: status,
       });
@@ -115,9 +158,11 @@ export default function DiscordSettings({ isOpen, onClose }) {
       // Update presence service
       await presenceService.setStatus(status);
 
-      console.log('Profile updated successfully');
+      refetchMemberProfiles(); // Re-fetch member profiles to get the updated banner
+
+      console.log('프로필이 성공적으로 업데이트되었습니다');
     } catch (err) {
-      console.error('Profile update error:', err);
+      console.error('프로필 업데이트 오류:', err);
       setError('프로필 업데이트 실패: ' + err.message);
     } finally {
       setLoading(false);
@@ -214,6 +259,36 @@ export default function DiscordSettings({ isOpen, onClose }) {
                       </label>
                       <p className="text-discord-gray-2 text-xs">권장: 정사각형 이미지, 최대 8MB</p>
                     </div>
+                  </div>
+                </div>
+
+                {/* Banner Section */}
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">프로필 배너</label>
+                  <div className="h-32 bg-gray-700 rounded-t-lg relative group">
+                    {bannerUrl ? (
+                      <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-500"></div>
+                    )}
+                    {uploadingBanner && (
+                        <div className="absolute inset-0 bg-black/50 rounded-t-lg flex items-center justify-center">
+                          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    )}
+                  </div>
+                  <div className="bg-discord-dark-3 rounded-b-lg p-4">
+                     <label className="btn-secondary cursor-pointer inline-block">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleBannerUpload}
+                          className="hidden"
+                          disabled={uploadingBanner}
+                        />
+                        {uploadingBanner ? '업로드 중...' : '배너 변경'}
+                      </label>
+                      <p className="text-discord-gray-2 text-xs mt-2">권장: 960x540 이미지, 최대 8MB</p>
                   </div>
                 </div>
 
@@ -359,6 +434,7 @@ export default function DiscordSettings({ isOpen, onClose }) {
           onClose={() => setShowCropperModal(false)}
           imageSrc={imageToCrop}
           onCropComplete={handleCropComplete}
+          aspectRatio={imageToCropFor === 'banner' ? 16 / 9 : 1 / 1}
         />
       )}
     </div>

@@ -74,7 +74,7 @@ export async function getCroppedImg(imageSrc, pixelCrop, rotation = 0) {
   });
 }
 
-export default function ImageCropperModal({ isOpen, onClose, imageSrc, onCropComplete }) {
+export default function ImageCropperModal({ isOpen, onClose, imageSrc, onCropComplete, aspectRatio = 1 / 1 }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -112,7 +112,7 @@ export default function ImageCropperModal({ isOpen, onClose, imageSrc, onCropCom
           crop={crop}
           zoom={zoom}
           rotation={rotation}
-          aspect={1 / 1} // Square aspect ratio for avatars
+          aspect={aspectRatio} // Square aspect ratio for avatars
           onCropChange={onCropChange}
           onZoomChange={onZoomChange}
           onRotationChange={onRotationChange}

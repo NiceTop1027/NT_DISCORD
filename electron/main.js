@@ -57,10 +57,10 @@ function createWindow() {
       ...details.responseHeaders,
       'Content-Security-Policy': [
         "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com https://*.firebaseio.com; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com https://*.firebaseio.com https://www.googletagmanager.com; " +
         "style-src 'self' 'unsafe-inline'; " +
         "img-src 'self' data: https: blob:; " +
-        "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://accounts.google.com wss://*.firebaseio.com https://*.cloudfunctions.net; " +
+        "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://accounts.google.com wss://*.firebaseio.com https://*.cloudfunctions.net https://www.google-analytics.com; " +
         "font-src 'self' data:; " +
         "media-src 'self' blob:; " +
         "frame-src https://accounts.google.com https://*.firebaseapp.com https://*.firebaseio.com;"

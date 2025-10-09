@@ -7,7 +7,7 @@ import UserProfileCard from '../common/UserProfileCard';
 import UserProfileModal from '../common/UserProfileModal';
 
 export default function Message({ message, serverRoles, isGrouped }) {
-  const { currentUser, selectedServer, selectedChannel } = useStore();
+  const { currentUser, selectedServer, selectedChannel, memberProfiles } = useStore();
   const { id, senderId, senderDisplayName, senderAvatarUrl, text, createdAt, senderNickname, isEdited, updatedAt, type, imageUrl } = message;
 
   const [member, setMember] = useState(null);
@@ -18,11 +18,30 @@ export default function Message({ message, serverRoles, isGrouped }) {
   const messageRef = useRef(null);
 
   useEffect(() => {
-    if (selectedServer && message.userId) {
-      const foundMember = selectedServer.members.find(m => m.uid === message.userId);
-      setMember(foundMember);
+    if (selectedServer && senderId) {
+      const foundMemberInServer = selectedServer.members.find(m => m.uid === senderId);
+      const fullUserProfile = memberProfiles.find(p => p.uid === senderId); // Get full profile from store
+
+      if (foundMemberInServer && fullUserProfile) {
+        // Merge member data with full user profile data
+        const mergedMember = {
+          ...foundMemberInServer, // Contains uid, roleIds, etc.
+          ...fullUserProfile,     // Contains uid, email, profile, status, etc.
+          // Ensure the 'profile' object is correctly taken from fullUserProfile
+          profile: fullUserProfile.profile || {},
+        };
+
+        // Find the highest priority role with a color
+        const memberRoles = serverRoles.filter(role => mergedMember.roleIds?.includes(role.id));
+        // Sort by position (higher position means higher priority)
+        const sortedRoles = memberRoles.sort((a, b) => (b.position || 0) - (a.position || 0));
+        const highestColorRole = sortedRoles.find(role => role.color);
+        setMember({ ...mergedMember, highestRoleColor: highestColorRole?.color || null });
+      } else {
+        setMember(null);
+      }
     }
-  }, [selectedServer, message.userId]);
+  }, [selectedServer, senderId, serverRoles, memberProfiles]); // Add memberProfiles to dependencies
 
   const handleMouseEnter = (e) => {
     if (member) {
@@ -104,10 +123,32 @@ export default function Message({ message, serverRoles, isGrouped }) {
     }
   };
 
+  const renderTextWithLinks = (text) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+  
+    return parts.map((part, index) => {
+      if (part.match(urlRegex)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:underline"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <div
       ref={messageRef}
-      className={`flex items-start space-x-3 p-2 hover:bg-discord-dark-hover rounded-lg relative group ${isGrouped ? 'mt-0.5' : 'mt-4'}`}
+      className={`flex items-start space-x-3 rounded-lg relative group ${isGrouped ? 'mt-0.5 pl-[52px] pr-2 py-0.5' : 'mt-4 p-2'} hover:bg-discord-dark-2/50 transition-colors duration-150 ease-in-out`} // Changed hover bg and added transition
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -125,11 +166,12 @@ export default function Message({ message, serverRoles, isGrouped }) {
           />
         </div>
       )}
-      <div className="flex-grow min-w-0">
+      <div className={`flex-grow min-w-0 ${isGrouped ? 'ml-[52px]' : ''}`}>
         {!isGrouped && (
           <div className="flex items-baseline space-x-2">
             <span
-              className="font-medium text-white cursor-pointer"
+              className="font-medium cursor-pointer"
+              style={{ color: member?.highestRoleColor || 'white' }}
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
               onClick={handleUserClick}
@@ -137,7 +179,7 @@ export default function Message({ message, serverRoles, isGrouped }) {
               {senderDisplayName || senderNickname || 'Unknown User'}
             </span>
             <span
-              className="text-xs text-gray-400"
+              className={`text-xs text-gray-400 ${isGrouped ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-150' : ''}`} // Hide for grouped, show on hover
               onMouseEnter={() => setShowFullTimestamp(true)}
               onMouseLeave={() => setShowFullTimestamp(false)}
             >
@@ -158,7 +200,7 @@ export default function Message({ message, serverRoles, isGrouped }) {
         ) : type === 'image' ? (
           <img src={imageUrl} alt="Uploaded image" className="max-w-xs max-h-64 rounded-lg object-contain" />
         ) : (
-          <p className="text-gray-300">{text}</p>
+          <p className="text-gray-300 whitespace-pre-wrap">{renderTextWithLinks(text)}</p>
         )}
       </div>
 
